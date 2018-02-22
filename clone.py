@@ -1,10 +1,20 @@
+'''
+To fix: GLib-GIO-Message: Using the 'memory' GSettings backend.  Your settings will not be saved or shared with other applications
+
+Install the following in anaconda environment:
+sudo apt-get install dconf-gsettings-backend
+'''
+
 import csv
 import cv2
 import numpy as np
+import matplotlib as mp
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import PIL
 # from keras.models import Sequential
 # from keras.layers import Flatten, Dense, Lambda, Conv2D, Convolution2D, Cropping2D
 # from keras.layers.pooling import MaxPooling2D
-# import cv2
 
 # Read in image and measurements data from .csv file:
 
@@ -19,38 +29,62 @@ def get_csv_data(csv_file='./data/driving_log.csv'):
 
 
 lines = get_csv_data()
-# print(lines)
 
 
-images = []
-for line in lines:
-    for i in range(3):
-        source_path = line[i]
-        filename = source_path.split('/')[-1]
-        current_path = './data/IMG/' + filename
-        image = cv2.imread(current_path)
-        images.append(image)
+# TODO: convert to generator
+def get_images():
+    images = []
+    for line in lines:
+        for i in range(3):
+            source_path = line[i]
+            filename = source_path.split('/')[-1]
+            current_path = './data/IMG/' + filename
+            image = mpimg.imread(current_path)
+            images.append(image)
+    return images
 
 
-measurements = []
-# measurement = float(line[3])
-# measurements.append(measurement)
-steering_center = float(row[3])
-
-# create adjusted steering measurements for the side camera images
-#         correction = 0.2  # this is a parameter to tune
-#         steering_left = steering_center + correction
-#         steering_right = steering_center - correction
+images = get_images()
 
 
-# augmented_images = []
-# augmented_measurements = []
+def get_measurements(correction=0.2):
+    measurements = []
+    for line in lines:
+        steering_center = float(line[3])
+        measurements.append(steering_center)
+        steering_left = steering_center + correction
+        measurements.append(steering_left)
+        steering_right = steering_center - correction
+        measurements.append(steering_right)
 
-# for image, measurement in zip(images, measurements):
-#     augmented_images.append(image)
-#     augmented_measurements.append(measurement)
-#     augmented_images.append(cv2.flip(image, 1))
-#     augmented_measurements.append(measurement * -1.0)
+    return measurements
+
+
+measurements = get_measurements()
+
+
+# i = 4
+# print(f'Steering = {measurements[i]}')
+# img = images[i]
+# plt.imshow(img)
+# plt.show()
+
+
+augmented_images = []
+augmented_measurements = []
+
+for image, measurement in zip(images, measurements):
+    augmented_images.append(image)
+    augmented_measurements.append(measurement)
+    augmented_images.append(cv2.flip(image, 1))
+    augmented_measurements.append(measurement * -1.0)
+
+
+i = 0
+print(f'Steering = {augmented_measurements[i]}')
+img = augmented_images[i]
+plt.imshow(img)
+plt.show()
 
 
 # X_train = np.array(augmented_images)
